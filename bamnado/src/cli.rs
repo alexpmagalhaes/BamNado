@@ -72,13 +72,13 @@ struct FilterOptions {
     #[arg(long, default_value = "20", value_name = "INT")]
     min_mapq: u8,
 
-    /// Minimum read length in base pairs.
-    #[arg(long, default_value = "20", value_name = "BP")]
-    min_length: u32,
+    /// Minimum read length in base pairs. Pass "none" to disable this bound.
+    #[arg(long, default_value = "20", value_name = "BP|none", value_parser = parse_length_bound)]
+    min_length: LengthBound,
 
-    /// Maximum read length in base pairs.
-    #[arg(long, default_value = "1000", value_name = "BP")]
-    max_length: u32,
+    /// Maximum read length in base pairs. Pass "none" to disable this bound.
+    #[arg(long, default_value = "1000", value_name = "BP|none", value_parser = parse_length_bound)]
+    max_length: LengthBound,
 
     /// BED file of regions to exclude.
     #[arg(
@@ -569,6 +569,29 @@ fn validate_bam_file(bam_path: &Path) -> Result<()> {
     Ok(())
 }
 
+/// A read-length bound that is either a concrete value in base pairs or
+/// explicitly disabled ("none"/"unlimited"/"inf"). This is a newtype around
+/// `Option<u32>` rather than a bare `Option<u32>` field: clap's derive macro
+/// infers the stored value type from a bare `Option<u32>` field as `u32`
+/// (using the field's own optionality to mean "argument not supplied"), so a
+/// value_parser that itself returns `Option<u32>` mismatches that inferred
+/// type and clap panics at runtime trying to downcast it back to `u32`.
+#[derive(Clone, Copy, Debug)]
+struct LengthBound(Option<u32>);
+
+/// Parses a read-length bound: a non-negative integer, or one of
+/// "none" / "unlimited" / "inf" (case-insensitive) to disable the bound
+/// entirely rather than requiring the caller to guess a sufficiently large
+/// number (which is also bounded by u32::MAX).
+fn parse_length_bound(s: &str) -> Result<LengthBound, String> {
+    match s.trim().to_lowercase().as_str() {
+        "none" | "unlimited" | "inf" | "infinite" => Ok(LengthBound(None)),
+        _ => s.parse::<u32>().map(|v| LengthBound(Some(v))).map_err(|_| {
+            format!("`{s}` is not a valid length: expected a non-negative integer or \"none\"")
+        }),
+    }
+}
+
 fn log_active_filters(filter_options: &FilterOptions) {
     let mut rows = vec![
         ("strand", filter_options.strand.to_string()),
@@ -577,7 +600,14 @@ fn log_active_filters(filter_options: &FilterOptions) {
             "read length",
             format!(
                 "{}..{} bp",
-                filter_options.min_length, filter_options.max_length
+                filter_options
+                    .min_length
+                    .0
+                    .map_or(String::from("0"), |v| v.to_string()),
+                filter_options
+                    .max_length
+                    .0
+                    .map_or(String::from("inf"), |v| v.to_string())
             ),
         ),
         (
@@ -704,8 +734,8 @@ fn create_filter_from_options(
         filter_options.strand.into(),
         filter_options.proper_pair,
         Some(filter_options.min_mapq),
-        Some(filter_options.min_length),
-        Some(filter_options.max_length),
+        filter_options.min_length.0,
+        filter_options.max_length.0,
         filter_options.read_group.clone(),
         blacklisted_locations,
         whitelisted_barcodes,
@@ -904,8 +934,8 @@ fn dispatch(cli: Cli) -> Result<()> {
                     filter_options.strand.into(),
                     filter_options.proper_pair,
                     Some(filter_options.min_mapq),
-                    Some(filter_options.min_length),
-                    Some(filter_options.max_length),
+                    filter_options.min_length.0,
+                    filter_options.max_length.0,
                     filter_options.read_group.clone(),
                     blacklisted_locations,
                     bam_barcodes,
