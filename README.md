@@ -134,8 +134,8 @@ All coverage commands share common read filter flags:
 | `--strand` | `both` | `forward`, `reverse`, or `both` |
 | `--proper-pairs` | off | Keep only properly-paired reads |
 | `--min-mapq` | 20 | Minimum mapping quality |
-| `--min-length` | 20 | Minimum read length (bp) |
-| `--max-length` | 1000 | Maximum read length (bp) |
+| `--min-length` | 20 | Minimum read length (bp) (Pass "none" to disable this bound) |
+| `--max-length` | 1000 | Maximum read length (bp) (Pass "none" to disable this bound) |
 | `--min-fragment-len` | — | Minimum insert size (bp); paired-end only |
 | `--max-fragment-len` | — | Maximum insert size (bp); paired-end only |
 | `--blacklist` | — | BED file of regions to exclude |
