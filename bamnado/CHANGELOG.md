@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.5](https://github.com/alsmith151/BamNado/compare/v0.9.0...v0.9.5) (2026-09-01)
+
+### Features
+
+* **bam-coverage:** Add aility to disable read length filters ([#100](https://github.com/alsmith151/BamNado/issues/100)) ([43a74ee]
+(https://github.com/alexpmagalhaes/BamNado/commit/43a74eecca044890c07a7c13a6369f7509ad5243))
+
 ## [0.9.0](https://github.com/alsmith151/BamNado/compare/v0.8.1...v0.9.0) (2026-07-29)
 
 
